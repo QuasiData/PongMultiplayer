@@ -110,10 +110,10 @@ class Paddle:
             return
         if self.rect.centery - (self.height / 2) < 0 and direction == 'up':
             return
+        if direction == "down":
+            self.rect.centery += (self.height / self.fps) * 2
         if direction == "up":
-            self.rect.centery -= self.height / self.fps * 2
-        elif direction == "down":
-            self.rect.centery += self.height / self.fps * 2
+            self.rect.centery -= (self.height / self.fps) * 2
 
 
 class Ball:
