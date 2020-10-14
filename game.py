@@ -7,7 +7,9 @@ import pygame as pg
 
 
 class Game:
-
+    """
+    A game object. Handles all logic for the game
+    """
     def __init__(self, screen_rect: pg.Rect, fps: int, ip: str = '', port: int = 5050, host: bool = True):
         self.fps = fps
         self.host = host
@@ -32,6 +34,9 @@ class Game:
         self.disconnect = False
 
     def update(self):
+        """
+        Updates the state of all actors in the game
+        """
         self.ball.move()
         self.upper_bound()
         if self.bounds():
@@ -45,11 +50,17 @@ class Game:
         send_paddle(self, self.connection)
 
     def bounds(self):
+        """
+        Checks if a players has won the game and updates the ball
+
+        Returns(bool):
+            True if current game won
+        """
         if self.ball.pos_x < 0:
-            print(f"{Fore.MAGENTA}You lost that round!")
+            print(f"{Fore.RED}You lost that round!")
             return True
         elif self.ball.pos_x > self.screen_rect[2]:
-            print(f"{Fore.MAGENTA}You won that round!")
+            print(f"{Fore.GREEN}You won that round!")
             self.ball.pos_x = self.screen_rect[2] / 2
             self.ball.pos_y = self.screen_rect[3] / 2
             self.ball.dir_x = 1
@@ -59,25 +70,44 @@ class Game:
         return False
 
     def upper_bound(self):
+        """
+        Checks if ball hit the top or bottom of the
+        screen and changes its direction accordingly
+        """
         if self.ball.pos_y < 0 or self.ball.pos_y > self.screen_rect[3]:
             self.ball.dir_y = -self.ball.dir_y
 
     def bounce(self):
+        """
+        Checks if ball has collided with the games paddle
+        and changes its direction accordingly
+
+        Calculates an angle between -60 and 60
+        depending on how far from center the ball is
+
+        Returns(bool):
+            True if collision is detected
+        """
         collide = self.paddle.rect.collidepoint(self.ball.pos_x, self.ball.pos_y)
         if collide:
             angle = (self.ball.pos_y - self.paddle.rect.centery) / (self.paddle.height / 2) * 60
-            print(angle)
             self.ball.dir_x = math.cos(math.radians(angle))
             self.ball.dir_y = math.sin(math.radians(angle))
             return True
         return False
 
     def start(self):
+        """
+        Starts the game by connecting the sockets
+
+        Host waits for a connection from another game
+
+        If not host connects to host
+        """
         if self.host:
             print(f"{Fore.CYAN}Server is starting...")
             self.socket.listen()
             print(f"{Fore.CYAN}Server is listening on {Fore.YELLOW + self.ip}...")
-            print(self.paddle.rect.center)
             conn, addr = self.socket.accept()
             print(f"{Fore.YELLOW}{addr} {Fore.CYAN}connected\n{Fore.YELLOW}")
             self.connection = conn
@@ -89,15 +119,20 @@ class Game:
                 print(f"{Fore.CYAN}Connection timed out. (Server might not be running)")
                 quit()
 
+        # Make the ball start moving
         self.ball.dir_x = -1
         run_network(self, self.connection)
 
     def stop(self):
+        # Not currently implemented
+        # Meant to be a graceful exit and reset colorama
         pass
 
 
 class Paddle:
-
+    """
+    A paddle object. Keeps track of data concerning paddles
+    """
     def __init__(self, field_height: int, size: tuple, position: list, fps: int):
         self.field_height = field_height
         self.width, self.height = size
@@ -105,19 +140,28 @@ class Paddle:
         self.fps = fps
         self.rect = pg.Rect(self.position[0], self.position[1] - int(self.height / 2), self.width, self.height)
 
-    def move(self, direction):
-        if self.rect.centery + (self.height / 2) > self.field_height and direction == 'down':
-            return
-        if self.rect.centery - (self.height / 2) < 0 and direction == 'up':
-            return
-        if direction == "down":
-            self.rect.centery += (self.height / self.fps) * 2
-        if direction == "up":
-            self.rect.centery -= (self.height / self.fps) * 2
+    def move(self, direction: int):
+        """
+        Moves the paddle an amount of pixels based on
+        the games field size and fps
+
+        Args:
+            direction(int): 1 for up and -1 for down
+        """
+        if self.rect.centery - (self.height / 2) < 0 and direction == 1:
+            pass
+        elif self.rect.centery + (self.height / 2) > self.field_height and direction == -1:
+            pass
+        elif direction == 1:
+            self.rect.centery -= math.ceil((float(self.height) / float(self.fps)) * 2)
+        elif direction == -1:
+            self.rect.centery += math.ceil((float(self.height) / float(self.fps)) * 2)
 
 
 class Ball:
-
+    """
+    A ball object. Keeps track of data concerning the ball
+    """
     def __init__(self, field_width: int, position: tuple, fps: int, direction: tuple = (0, 0), velocity: float = 0.2):
         self.field_width = field_width
         self.pos_x, self.pos_y = position
@@ -126,5 +170,9 @@ class Ball:
         self.velocity = velocity
 
     def move(self):
+        """
+        Move the ball an amount of pixels based on
+        the game field size and fps
+        """
         self.pos_x += self.dir_x * self.velocity * self.field_width / self.fps
         self.pos_y += self.dir_y * self.velocity * self.field_width / self.fps

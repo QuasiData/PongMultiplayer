@@ -5,11 +5,20 @@ from socket import socket
 
 
 def read_payload(payload):
+    # Kind of a meh function currently
     if len(payload.split(",")) > 1:
         return 'ball'
 
 
 def update_game(game, conn: socket):
+    """
+    Receives updates about the ball and paddle
+    of the other game. Runs on a separate thread.
+
+    Args:
+        game(Game): Current Game object
+        conn(socket): The socket the game is connected to
+    """
     connected = True
     while connected:
         try:
@@ -33,6 +42,14 @@ def update_game(game, conn: socket):
 
 
 def send_paddle(game, conn: socket):
+    """
+    Sends the y position of the paddle
+    to the other game
+
+    Args:
+        game(Game): Current Game object
+        conn(socket): The socket the game is connected to
+    """
     try:
         y = game.paddle.rect.centery
         payload = f"{y}".encode('utf-8')
@@ -46,6 +63,14 @@ def send_paddle(game, conn: socket):
 
 
 def send_ball(game, conn: socket):
+    """
+    Sends the position, direction and velocity
+    of the ball to the other game
+
+    Args:
+        game(Game): Current Game object
+        conn(socket): The socket the game is connected to
+    """
     try:
         pos_x, pos_y = game.ball.pos_x, game.ball.pos_y
         dir_x, dir_y = game.ball.dir_x, game.ball.dir_y
@@ -61,6 +86,12 @@ def send_ball(game, conn: socket):
 
 
 def run_network(game, conn: socket):
+    """
+    Starts a thread of the function update_game
+
+    Args:
+        game(Game): Current Game object
+        conn(socket): The socket the game is connected to
+    """
     thread_update = threading.Thread(target=update_game, args=(game, conn))
     thread_update.start()
-

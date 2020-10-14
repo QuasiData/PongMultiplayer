@@ -1,30 +1,38 @@
 import sys
+
 import pygame as pg
 from game import Game
 
 
 SCREEN_SIZE = (810, 810)
-FPS = 60
 BACKGROUND = pg.Color("black")
+FPS = 60
 
 
 class App:
-    def __init__(self, host):
+    """
+    An App object. Keeps track of data concerning the flow of the game
+    and initialises a Game
+    """
+    def __init__(self, host: bool, port: int, ip: str):
         self.screen = pg.display.get_surface()
         self.screen_rect = self.screen.get_rect()
         self.clock = pg.time.Clock()
         if host:
-            self.game = Game(self.screen_rect, FPS)
+            self.game = Game(screen_rect=self.screen_rect, fps=FPS, port=port, host=host)
         else:
-            self.game = Game(self.screen_rect, FPS, ip="192.168.1.13", host=False)  # TODO: Implement argparse for this
+            self.game = Game(screen_rect=self.screen_rect, fps=FPS, ip=ip, port=port, host=host)
         self.game.start()
-        self.prev_paddle_rect = 0
-        self.prev_other_paddle_rect = 0
-        self.prev_ball_pos = 0
+        self.prev_paddle_rect = None
+        self.prev_other_paddle_rect = None
+        self.prev_ball_pos = None
         self.first_loop = True
         self.done = False
 
     def draw(self):
+        """
+        Draws the paddles and ball and copies their position
+        """
         pg.draw.rect(self.screen, (255, 255, 255), self.game.paddle.rect)
         pg.draw.rect(self.screen, (255, 255, 255), self.game.other_paddle.rect)
         pg.draw.circle(self.screen, (255, 255, 255), (int(self.game.ball.pos_x), int(self.game.ball.pos_y)), 20)
@@ -34,31 +42,22 @@ class App:
 
     def update(self):
         """
-        All updates to all actors occur here.
-        Exceptions include things that are direct results of events which
-        may occasionally occur in the event loop.
-
-        For example, updates based on held keys should be found here, but
-        updates to single KEYDOWN events would be found in the event loop.
+        Updates all actors in game and moves paddles based on key held
         """
-
         keys = pg.key.get_pressed()
-        if keys[pg.K_s]:
-            self.game.paddle.move("down")
-        elif keys[pg.K_w]:
-            self.game.paddle.move("up")
-
+        if keys[pg.K_e]:
+            self.game.paddle.move(1)
+        elif keys[pg.K_d]:
+            self.game.paddle.move(-1)
         self.game.update()
 
     def render(self):
         """
-        All calls to drawing functions here.
-        No game logic.
+        Uses method draw to draw everything on the screen and update it
         """
         if self.first_loop:
             self.screen.fill(BACKGROUND)
             self.draw()
-
         else:
             pg.draw.rect(self.screen, (0, 0, 0), self.prev_paddle_rect)
             pg.draw.rect(self.screen, (0, 0, 0), self.prev_other_paddle_rect)
@@ -68,9 +67,7 @@ class App:
 
     def event_loop(self):
         """
-        Event handling here.  Only things that are explicit results of the
-        given events should be found here.  Do not confuse the event and update
-        phases.
+        Handles single key presses and events
         """
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -78,8 +75,7 @@ class App:
 
     def main_loop(self):
         """
-        Main loop for your whole app.  This doesn't need to be touched until
-        you start writing framerate independent games.
+        Main loop for the game
         """
         while not self.done:
             self.event_loop()
@@ -90,10 +86,15 @@ class App:
                 self.first_loop = False
 
 
-def main(host=False):
+def main(host: bool, port: int, ip: str):
     """
-    Prepare pygame and the display and create an App instance.
-    Call the app instance's main_loop function to begin the App.
+    Initialises pygame and screen.
+    Creates an App object and calls its main_loop method
+
+    Args:
+        host(bool): True if this App should act as host
+        port(int): The port of the connection
+        ip(str): IP address to connect to if not host
     """
     pg.init()
     pg.display.set_mode(SCREEN_SIZE)
@@ -101,10 +102,6 @@ def main(host=False):
         pg.display.set_caption("HOST")
     else:
         pg.display.set_caption("CLIENT")
-    App(host).main_loop()
+    App(host, port, ip).main_loop()
     pg.quit()
     sys.exit()
-    
-
-if __name__ == "__main__":
-    main()
