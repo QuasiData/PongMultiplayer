@@ -84,6 +84,7 @@ class App:
             self.clock.tick(FPS)
             if self.first_loop:
                 self.first_loop = False
+        self.game.stop()
 
 
 def main(host: bool, port: int, ip: str):

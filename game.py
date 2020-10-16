@@ -1,9 +1,11 @@
 import socket
 import math
+import threading
 
-from network_utils import run_network, send_paddle, send_ball
-from colorama import Fore
+from network_utils import update_game, send_paddle, send_ball
+from colorama import Fore, init
 import pygame as pg
+init()
 
 
 class Game:
@@ -31,7 +33,7 @@ class Game:
             self.connection = None
         else:
             self.connection = self.socket
-        self.disconnect = False
+        self.update_thread = None
 
     def update(self):
         """
@@ -121,9 +123,13 @@ class Game:
 
         # Make the ball start moving
         self.ball.dir_x = -1
-        run_network(self, self.connection)
+        self.update_thread = threading.Thread(target=update_game, args=(self, self.connection), daemon=True)
+        self.update_thread.start()
 
     def stop(self):
+        # self.socket.shutdown(socket.SHUT_RDWR)
+        # self.socket.close()
+        # quit()
         # Not currently implemented
         # Meant to be a graceful exit and reset colorama
         pass

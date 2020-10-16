@@ -2,6 +2,9 @@ import threading
 
 from colorama import Fore
 from socket import socket
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from game import Game
 
 
 def read_payload(payload):
@@ -10,7 +13,7 @@ def read_payload(payload):
         return 'ball'
 
 
-def update_game(game, conn: socket):
+def update_game(game: Game, conn: socket):
     """
     Receives updates about the ball and paddle
     of the other game. Runs on a separate thread.
@@ -37,11 +40,10 @@ def update_game(game, conn: socket):
         except ConnectionAbortedError or ConnectionResetError as e:
             print(f"{Fore.RED}{e}")
             connected = False
-    conn.close()
-    game.disconnect = True
+    game.stop()
 
 
-def send_paddle(game, conn: socket):
+def send_paddle(game: Game, conn: socket):
     """
     Sends the y position of the paddle
     to the other game
@@ -57,12 +59,12 @@ def send_paddle(game, conn: socket):
         header = arg + b" " * (32 - len(arg))
         msg = header + payload
         conn.sendall(msg)
-    except ConnectionAbortedError or ConnectionResetError as e:
+    except (ConnectionAbortedError, ConnectionResetError) as e:
         print(f"{Fore.RED}{e}")
-        conn.close()
+        game.stop()
 
 
-def send_ball(game, conn: socket):
+def send_ball(game: Game, conn: socket):
     """
     Sends the position, direction and velocity
     of the ball to the other game
@@ -80,18 +82,6 @@ def send_ball(game, conn: socket):
         header = arg + b" " * (32 - len(arg))
         msg = header + payload
         conn.sendall(msg)
-    except ConnectionAbortedError or ConnectionResetError as e:
+    except (ConnectionAbortedError, ConnectionResetError) as e:
         print(f"{Fore.RED}{e}")
-        conn.close()
-
-
-def run_network(game, conn: socket):
-    """
-    Starts a thread of the function update_game
-
-    Args:
-        game(Game): Current Game object
-        conn(socket): The socket the game is connected to
-    """
-    thread_update = threading.Thread(target=update_game, args=(game, conn))
-    thread_update.start()
+        game.stop()
